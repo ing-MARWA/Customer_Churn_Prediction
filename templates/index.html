@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📡 ChurnBot — Telco Churn Prediction</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & tokens ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080d1a;
+      --bg2:         #0d1630;
+      --bg3:         #111e3c;
+      --surface:     rgba(17, 30, 60, 0.85);
+      --surface2:    rgba(22, 38, 72, 0.9);
+      --border:      rgba(99, 179, 237, 0.14);
+      --border2:     rgba(159, 122, 234, 0.18);
+      --accent-blue: #63b3ed;
+      --accent-purple:#9f7aea;
+      --accent-pink: #f687b3;
+      --text:        #e2e8f0;
+      --text-muted:  #718096;
+      --text-soft:   #a0aec0;
+      --danger:      #fc4a4a;
+      --safe:        #48bb78;
+      --radius:      16px;
+      --font-display:'Syne', sans-serif;
+      --font-body:   'DM Sans', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────── */
+    .sidebar {
+      background: rgba(8, 13, 26, 0.97);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1.2rem;
+      overflow-y: auto;
+      gap: 1.4rem;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .sidebar-logo .logo-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .sidebar-logo .logo-text {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    .sidebar-section-title {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .sidebar-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .step {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 22px; height: 22px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-text {
+      font-size: 0.82rem;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    .field-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .field-chip {
+      font-size: 0.72rem;
+      color: var(--accent-blue);
+      background: rgba(99,179,237,0.08);
+      border: 1px solid rgba(99,179,237,0.15);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .btn-new {
+      width: 100%;
+      padding: 0.7rem;
+      background: linear-gradient(135deg, rgba(99,179,237,0.15), rgba(159,122,234,0.15));
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+    .btn-new:hover {
+      background: linear-gradient(135deg, rgba(99,179,237,0.25), rgba(159,122,234,0.25));
+      transform: translateY(-1px);
+    }
+
+    /* ── Main chat area ──────────────────────────────────────────────── */
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: radial-gradient(ellipse at 30% 0%, rgba(99,179,237,0.05) 0%, transparent 60%),
+                  radial-gradient(ellipse at 70% 100%, rgba(159,122,234,0.05) 0%, transparent 60%),
+                  var(--bg2);
+    }
+
+    /* ── Top bar ─────────────────────────────────────────────────────── */
+    .topbar {
+      padding: 1rem 1.8rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 13, 26, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+    .topbar-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .topbar-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      background: var(--safe);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--safe);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── Messages ────────────────────────────────────────────────────── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .bubble {
+      max-width: 72%;
+      padding: 0.85rem 1.15rem;
+      border-radius: 18px;
+      font-size: 0.9rem;
+      line-height: 1.65;
+      animation: fadeUp 0.25s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .bubble-user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #2d3a6b, #1e2d5a);
+      border: 1px solid rgba(99,179,237,0.22);
+      border-radius: 18px 18px 4px 18px;
+      color: var(--text);
+    }
+    .bubble-bot {
+      align-self: flex-start;
+      background: linear-gradient(135deg, var(--surface), var(--surface2));
+      border: 1px solid var(--border2);
+      border-radius: 18px 18px 18px 4px;
+      color: #cbd5e0;
+    }
+
+    .bubble-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+      opacity: 0.6;
+    }
+
+    /* ── Typing indicator ────────────────────────────────────────────── */
+    .typing {
+      align-self: flex-start;
+      display: flex;
+      gap: 5px;
+      padding: 0.75rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 18px 18px 18px 4px;
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--accent-purple);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%            { transform: translateY(-6px); }
+    }
+
+    /* ── Prediction card ─────────────────────────────────────────────── */
+    .prediction-card {
+      align-self: flex-start;
+      max-width: 85%;
+      border-radius: 20px;
+      padding: 1.4rem 1.6rem;
+      animation: fadeUp 0.35s ease;
+    }
+    .card-churn {
+      background: linear-gradient(135deg, rgba(74, 26, 42, 0.9), rgba(59, 21, 33, 0.9));
+      border: 1px solid rgba(245, 101, 101, 0.35);
+      box-shadow: 0 6px 32px rgba(245,101,101,0.12);
+    }
+    .card-safe {
+      background: linear-gradient(135deg, rgba(26, 58, 42, 0.9), rgba(22, 46, 34, 0.9));
+      border: 1px solid rgba(72, 187, 120, 0.35);
+      box-shadow: 0 6px 32px rgba(72,187,120,0.12);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .card-emoji { font-size: 2.4rem; }
+    .card-verdict {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
+    }
+    .badge-churn { background: var(--danger); color: #fff; }
+    .badge-safe  { background: var(--safe);   color: #fff; }
+
+    .card-probs {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .prob-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .prob-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .prob-value { font-size: 1.5rem; font-weight: 700; font-family: var(--font-display); }
+    .prob-churn-color { color: var(--danger); }
+    .prob-safe-color  { color: var(--safe); }
+
+    .prob-bar-wrap {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+    }
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 1s ease;
+    }
+    .fill-churn { background: linear-gradient(90deg, #f05252, var(--danger)); }
+    .fill-safe  { background: linear-gradient(90deg, #38a169, var(--safe)); }
+
+    .card-explanation {
+      font-size: 0.86rem;
+      color: var(--text-soft);
+      line-height: 1.7;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Profile table toggle */
+    .profile-toggle {
+      font-size: 0.78rem;
+      color: var(--accent-blue);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: var(--font-body);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .profile-toggle:hover { opacity: 1; }
+
+    .profile-table-wrap {
+      margin-top: 0.75rem;
+      display: none;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .profile-table-wrap.open { display: block; }
+
+    .profile-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    .profile-table th {
+      background: rgba(99,179,237,0.08);
+      color: var(--accent-blue);
+      text-align: left;
+      padding: 0.5rem 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+    .profile-table td {
+      padding: 0.45rem 0.8rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-soft);
+    }
+    .profile-table tr:hover td {
+      background: rgba(99,179,237,0.04);
+    }
+
+    /* ── Input bar ───────────────────────────────────────────────────── */
+    .input-area {
+      padding: 1rem 2rem 1.2rem;
+      border-top: 1px solid var(--border);
+      background: rgba(8,13,26,0.7);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
+    .input-wrap {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      padding: 0.65rem 0.75rem;
+      transition: border-color 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color: rgba(99,179,237,0.4);
+      box-shadow: 0 0 0 3px rgba(99,179,237,0.07);
+    }
+    #userInput {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      resize: none;
+      max-height: 120px;
+      line-height: 1.55;
+      padding: 0.2rem 0;
+    }
+    #userInput::placeholder { color: var(--text-muted); }
+    #userInput:disabled { opacity: 0.5; }
+
+    #sendBtn {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    #sendBtn:hover { transform: scale(1.07); }
+    #sendBtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #sendBtn svg { width: 16px; height: 16px; fill: #fff; }
+
+    .input-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .messages { padding: 1rem; }
+      .input-area { padding: 0.8rem 1rem 1rem; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+
+    <div class="sidebar-logo">
+      <div class="logo-icon">📡</div>
+      <div class="logo-text">ChurnBot</div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div>
+      <div class="sidebar-section-title">How to use</div>
+      <div class="sidebar-steps">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Type <strong>hi</strong> to start a new assessment.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Answer each question naturally — one at a time.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">Receive an instant churn prediction with full reasoning.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text">Click <strong>New Chat</strong> to assess another customer.</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div>
+      <div class="sidebar-section-title">Required Fields (19)</div>
+      <div class="field-list">
+        <span class="field-chip">gender</span>
+        <span class="field-chip">Senior Citizen</span>
+        <span class="field-chip">Is_Married</span>
+        <span class="field-chip">Dependents</span>
+        <span class="field-chip">tenure (months)</span>
+        <span class="field-chip">Phone_Service</span>
+        <span class="field-chip">Dual</span>
+        <span class="field-chip">Internet_Service</span>
+        <span class="field-chip">Online_Security</span>
+        <span class="field-chip">Online_Backup</span>
+        <span class="field-chip">Device_Protection</span>
+        <span class="field-chip">Tech_Support</span>
+        <span class="field-chip">Streaming_TV</span>
+        <span class="field-chip">Streaming_Movies</span>
+        <span class="field-chip">Contract</span>
+        <span class="field-chip">Paperless_Billing</span>
+        <span class="field-chip">Payment_Method</span>
+        <span class="field-chip">Monthly_Charges ($)</span>
+        <span class="field-chip">Total_Charges ($)</span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <button class="btn-new" onclick="newConversation()">
+      🔄 &nbsp; New Conversation
+    </button>
+
+  </aside>
+
+  <!-- ══ CHAT MAIN ════════════════════════════════════════════════════════ -->
+  <div class="chat-area">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="status-dot"></div>
+      <div class="topbar-title">Churn Prediction Chatbot</div>
+      <div class="topbar-sub">Powered by Gemini-2.5-flash × Random Forest</div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages" id="messages"></div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea id="userInput" placeholder="Type your message… (Enter to send)" rows="1"></textarea>
+        <button id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script>
+  let SESSION_ID = null;
+
+  // ── Auto-resize textarea ─────────────────────────────────────────────
+  const textarea = document.getElementById('userInput');
+  textarea.addEventListener('input', () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  });
+  textarea.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // ── Init ─────────────────────────────────────────────────────────────
+  async function init() {
+    const res  = await fetch('/api/new-session', { method: 'POST' });
+    const data = await res.json();
+    SESSION_ID = data.session_id;
+    // Auto-greet
+    await sendToBot('hi');
+  }
+
+  // ── Send button ───────────────────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text  = input.value.trim();
+    if (!text || !SESSION_ID) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    appendUserBubble(text);
+    await sendToBot(text);
+  }
+
+  // ── New conversation ─────────────────────────────────────────────────
+  async function newConversation() {
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('userInput').disabled  = false;
+    document.getElementById('sendBtn').disabled    = false;
+    await init();
+  }
+
+  // ── Core: send to API ────────────────────────────────────────────────
+  async function sendToBot(message) {
+    setInputDisabled(true);
+    const typingEl = appendTyping();
+
+    try {
+      const res  = await fetch('/api/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ session_id: SESSION_ID, message })
+      });
+      const data = await res.json();
+      typingEl.remove();
+
+      if (data.type === 'prediction') {
+        appendPredictionCard(data);
+        setInputDisabled(true);   // lock after prediction
+      } else {
+        appendBotBubble(data.html || data.raw || '');
+        setInputDisabled(false);
+      }
+    } catch (err) {
+      typingEl.remove();
+      appendBotBubble('⚠️ Connection error. Please try again.');
+      setInputDisabled(false);
+    }
+
+    scrollToBottom();
+  }
+
+  // ── DOM helpers ───────────────────────────────────────────────────────
+  function appendUserBubble(text) {
+    const el = document.createElement('div');
+    el.className = 'bubble bubble-user';
+    el.innerHTML = `<div class="bubble-label">You</div>${escapeHtml(text)}`;
+    document.getElementById('messages').appendChild(el);
+    scrollToBottom();
+  }
+
+  function appendBotBubble(html) {
+    const el = document.createElement('div');
+    el.className = 'bubble bubble-bot';
+    el.innerHTML = `<div class="bubble-label">ChurnBot</div>${html}`;
+    document.getElementById('messages').appendChild(el);
+    scrollToBottom();
+  }
+
+  function appendTyping() {
+    const el = document.createElement('div');
+    el.className = 'typing';
+    el.innerHTML = '<span></span><span></span><span></span>';
+    document.getElementById('messages').appendChild(el);
+    scrollToBottom();
+    return el;
+  }
+
+  function appendPredictionCard(data) {
+    const isChurn   = data.churn;
+    const cardClass = isChurn ? 'card-churn' : 'card-safe';
+    const emoji     = isChurn ? '🚨' : '✅';
+    const verdict   = isChurn ? 'HIGH CHURN RISK' : 'LOW CHURN RISK';
+    const badge     = isChurn
+      ? '<span class="badge badge-churn">CHURN</span>'
+      : '<span class="badge badge-safe">RETAINED</span>';
+    const barClass  = isChurn ? 'fill-churn' : 'fill-safe';
+    const probColor = isChurn ? 'prob-churn-color' : 'prob-safe-color';
+
+    // Profile table rows
+    const rows = (data.profile || []).map(r =>
+      `<tr><td>${escapeHtml(r.field)}</td><td>${escapeHtml(r.value)}</td></tr>`
+    ).join('');
+
+    const id = 'profile-' + Date.now();
+
+    const el = document.createElement('div');
+    el.className = `prediction-card ${cardClass}`;
+    el.innerHTML = `
+      <div class="card-header">
+        <span class="card-emoji">${emoji}</span>
+        <div>
+          <div class="card-verdict">${verdict} ${badge}</div>
+        </div>
+      </div>
+
+      <div class="card-probs">
+        <div class="prob-item">
+          <span class="prob-label">Churn Probability</span>
+          <span class="prob-value ${probColor}">${data.prob}%</span>
+        </div>
+        <div class="prob-item">
+          <span class="prob-label">Retention Probability</span>
+          <span class="prob-value" style="color:var(--text-soft)">${data.no_prob}%</span>
+        </div>
+      </div>
+
+      <div class="prob-bar-wrap">
+        <div class="prob-bar-fill ${barClass}" style="width:${data.prob}%"></div>
+      </div>
+
+      <div class="card-explanation bubble-label" style="margin-bottom:.5rem">Analysis</div>
+      <div class="card-explanation">${data.explanation_html}</div>
+
+      <button class="profile-toggle" onclick="toggleProfile('${id}')">
+        📋 &nbsp; <span id="toggle-label-${id}">Show customer profile</span>
+      </button>
+      <div class="profile-table-wrap" id="${id}">
+        <table class="profile-table">
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('messages').appendChild(el);
+    scrollToBottom();
+  }
+
+  function toggleProfile(id) {
+    const wrap  = document.getElementById(id);
+    const label = document.getElementById('toggle-label-' + id);
+    const open  = wrap.classList.toggle('open');
+    label.textContent = open ? 'Hide customer profile' : 'Show customer profile';
+  }
+
+  function setInputDisabled(disabled) {
+    document.getElementById('userInput').disabled = disabled;
+    document.getElementById('sendBtn').disabled   = disabled;
+  }
+
+  function scrollToBottom() {
+    const m = document.getElementById('messages');
+    m.scrollTop = m.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>
