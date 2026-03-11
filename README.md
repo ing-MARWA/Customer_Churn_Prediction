@@ -1,4 +1,5 @@
-# 📡 ChurnBot — Telco Customer Churn Prediction
+# 📡 ChurnBot — Telco Customer C<img width="1122" height="815" alt="Diagram" src="https://github.com/user-attachments/assets/962a3aec-f53b-4ee1-af60-76cd52bec5d5" />
+hurn Prediction
 
 > An AI-powered chatbot that predicts telecom customer churn through natural conversation, combining a trained Random Forest model with Google Gemini for intelligent dialogue and human-readable explanations.
 
